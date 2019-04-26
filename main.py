@@ -18,16 +18,17 @@ def download_picture(picture_id):
         image.write(picture_response.content)
 
 
-def get_info_for_upload(*args):
-    params = f'group_id=181636090'
+def get_info_for_upload(group_id, *args):
+    params = f'group_id={group_id}'
     url = f'https://api.vk.com/method/photos.getWallUploadServer?{params}&access_token={ACCESS_TOKEN}&v=5.95'
     response = requests.get(url).json()
     return response['response'][args[0]]
 
 
 # TODO new name for this function
-def upload_picture(pic_num):
-    upload_url = get_info_for_upload('upload_url')
+def upload_picture(pic_num, group_id):
+    upload_url = get_info_for_upload(group_id, 'upload_url')
+    download_picture(pic_num)
     pic_file = open(f'{pic_num}.png', 'rb')
     files = {'photo': pic_file}
     response = requests.post(upload_url, files=files).json()
@@ -36,24 +37,25 @@ def upload_picture(pic_num):
 
 
 # TODO new name for this function
-def get_media_id(pic_num):
-    server, photo, _hash = upload_picture(pic_num)
-    params = f'server={server}&photo={photo}&hash={_hash}&group_id=181636090'
+def get_media_id(pic_num, group_id):
+    server, photo, _hash = upload_picture(pic_num, group_id)
+    params = f'server={server}&photo={photo}&hash={_hash}&group_id={group_id}'
 
     url = f'https://api.vk.com/method/photos.saveWallPhoto?{params}&access_token={ACCESS_TOKEN}&v=5.95'
     response = requests.post(url).json()
     return response['response'][0]['id'], response['response'][0]['owner_id']
 
 
-def post_picture(pic_num):
-    media_id, owner_id = get_media_id(pic_num)
+def post_picture(pic_num, group_id):
+    media_id, owner_id = get_media_id(pic_num, group_id)
     attachments = f'photo{owner_id}_{media_id}'
     message = get_picture_data(pic_num)['alt']
-    params = f'owner_id=-181636090&from_group=1&attachments={attachments}&message={message}'
+    owner_id = f'-{group_id}'
+    params = f'owner_id={owner_id}&from_group=1&attachments={attachments}&message={message}'
 
     url = f'https://api.vk.com/method/wall.post?{params}&access_token={ACCESS_TOKEN}&v=5.95'
-    response = requests.get(url)
-    print(response.json())
+    requests.get(url)
+    os.remove(f'{pic_num}.png')
 
 
 def get_last_picture_num():
@@ -62,15 +64,10 @@ def get_last_picture_num():
     return response['num']
 
 
-def main():
-    pass
-
-
 if __name__ == '__main__':
     load_dotenv()
     ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
+    GROUP_ID = os.getenv('GROUP_ID')
 
     random_number = random.randint(1, get_last_picture_num())
-    print(random_number)
-
-
+    post_picture(random_number, GROUP_ID)
