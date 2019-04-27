@@ -25,7 +25,6 @@ def get_info_for_upload(group_id, *args):
     return response['response'][args[0]]
 
 
-# TODO new name for this function
 def upload_picture(pic_num, group_id):
     upload_url = get_info_for_upload(group_id, 'upload_url')
     download_picture(pic_num)
@@ -36,8 +35,7 @@ def upload_picture(pic_num, group_id):
     return response['server'], response['photo'], response['hash']
 
 
-# TODO new name for this function
-def get_media_id(pic_num, group_id):
+def get_data_for_post(pic_num, group_id):
     server, photo, _hash = upload_picture(pic_num, group_id)
     params = f'server={server}&photo={photo}&hash={_hash}&group_id={group_id}'
 
@@ -47,7 +45,7 @@ def get_media_id(pic_num, group_id):
 
 
 def post_picture(pic_num, group_id):
-    media_id, owner_id = get_media_id(pic_num, group_id)
+    media_id, owner_id = get_data_for_post(pic_num, group_id)
     attachments = f'photo{owner_id}_{media_id}'
     message = get_picture_data(pic_num)['alt']
     owner_id = f'-{group_id}'
