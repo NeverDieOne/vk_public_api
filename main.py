@@ -6,16 +6,27 @@ import random
 
 def get_picture_data(picture_id):
     url = f'http://xkcd.com/{picture_id}/info.0.json'
-    return requests.get(url).json()
+    response = requests.get(url)
+    try:
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError:
+        print('Picture not found')
+        exit()
 
 
 def download_picture(picture_id):
     picture_link = get_picture_data(picture_id)['img']
 
     picture_response = requests.get(picture_link)
-    filename = f'{picture_id}.png'
-    with open(filename, 'wb') as image:
-        image.write(picture_response.content)
+    try:
+        picture_response.raise_for_status()
+        filename = f'{picture_id}.png'
+        with open(filename, 'wb') as image:
+            image.write(picture_response.content)
+    except requests.exceptions.HTTPError:
+        print('Picture not found')
+        exit()
 
 
 def get_info_for_upload(group_id, *args):
@@ -26,7 +37,11 @@ def get_info_for_upload(group_id, *args):
     }
     url = f'https://api.vk.com/method/photos.getWallUploadServer'
     response = requests.get(url, params=params).json()
-    return response['response'][args[0]]
+    try:
+        print(response['error']['error_msg'])
+        exit()
+    except KeyError:
+        return response['response'][args[0]]
 
 
 def upload_picture(pic_num, group_id):
@@ -36,7 +51,11 @@ def upload_picture(pic_num, group_id):
     files = {'photo': pic_file}
     response = requests.post(upload_url, files=files).json()
     pic_file.close()
-    return response['server'], response['photo'], response['hash']
+    try:
+        print(response['error']['error_msg'])
+        exit()
+    except KeyError:
+        return response['server'], response['photo'], response['hash']
 
 
 def get_data_for_post(pic_num, group_id):
@@ -51,7 +70,11 @@ def get_data_for_post(pic_num, group_id):
     }
     url = f'https://api.vk.com/method/photos.saveWallPhoto'
     response = requests.post(url, params=params).json()
-    return response['response'][0]['id'], response['response'][0]['owner_id']
+    try:
+        print(response['error']['error_msg'])
+        exit()
+    except KeyError:
+        return response['response'][0]['id'], response['response'][0]['owner_id']
 
 
 def post_picture(pic_num, group_id):
@@ -65,14 +88,22 @@ def post_picture(pic_num, group_id):
         'v': '5.95'
     }
     url = f'https://api.vk.com/method/wall.post'
-    requests.get(url, params=params)
-    os.remove(f'{pic_num}.png')
+    response = requests.get(url, params=params).json()
+    try:
+        print(response['error']['error_msg'])
+        exit()
+    except KeyError:
+        os.remove(f'{pic_num}.png')
 
 
 def get_last_picture_num():
     url = 'https://xkcd.com/info.0.json'
-    response = requests.get(url).json()
-    return response['num']
+    response = requests.get(url)
+    try:
+        response.raise_for_status()
+        return response.json()['num']
+    except requests.exceptions.HTTPError:
+        exit()
 
 
 if __name__ == '__main__':
