@@ -33,6 +33,8 @@ def get_info_for_upload(group_id, *args):
     if 'error' in response:
         raise requests.exceptions.HTTPError(response['error']['error_msg'])
 
+    return response['response'][args[0]]
+
 
 def upload_picture(pic_num, group_id):
     upload_url = get_info_for_upload(group_id, 'upload_url')
